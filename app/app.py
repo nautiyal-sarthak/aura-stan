@@ -11,10 +11,12 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import datetime
+from dash.dependencies import Input, Output
 
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
-SERVICE_ACCOUNT_FILE = 'app/keys.json'
+SERVICE_ACCOUNT_FILE = 'keys.json'
 
 credentials=None
 credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
@@ -45,7 +47,7 @@ park_loss_df.reset_index(inplace=True)
 park_loss_df["park_start_mm"] = pd.to_datetime(park_loss_df["park_start_date"]).dt.strftime('%Y-%m')
 ########TRIP###############
 trip_dis_date = trip_df.groupby("trip_start_date").agg({'distance_traveled': 'sum', 'efficiency': 'mean'})
-trip_dis_date_mm = trip_df.groupby("trip_start_mm").agg({'distance_traveled': 'sum', 'efficiency': 'mean'})
+trip_dis_date_mm = trip_df.groupby("trip_start_mm").agg({'distance_traveled': 'sum', 'efficiency': 'mean','avg_temp':'mean'})
 trip_temp_wh_date = trip_df.groupby("trip_start_mm").mean()[["wh/km", "avg_temp", "max_kwh", "real_dis"]]
 trip_eff_temp = trip_df.groupby("avg_temp").mean()["efficiency"]
 trip_freq = trip_df.groupby("trip_start_mm").count()["charge_session_id"].rename("count")
@@ -245,6 +247,12 @@ def display_trip_dis_eff():
 
     fig.add_trace(
         go.Scatter(x=trip_dis_date_mm.index, y=trip_dis_date_mm["efficiency"], name="Avg Efficiency"),
+        secondary_y="Secondary" == 'Secondary',
+    )
+
+
+    fig.add_trace(
+        go.Scatter(x=trip_dis_date_mm.index, y=trip_dis_date_mm["avg_temp"], name="Avg Temp"),
         secondary_y="Secondary" == 'Secondary',
     )
 
@@ -521,19 +529,28 @@ BODY = dbc.Container(
 )
 
 
-def serve_layout():
-    return html.Div(children=[NAVBAR,BODY, html.Label("*Assumptions -->fule price = 1.20/L and Fule used per 100km = 7 L")])
-
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-app.layout = serve_layout
+app.layout = html.Div(
+    html.Div([
+        html.Div(id='live-update-text'),
+        dcc.Interval(
+            id='interval-component',
+            interval=3600000, # in milliseconds
+            n_intervals=0
+        )
+    ])
+)
+
+@app.callback(Output('live-update-text', 'children'),
+              [Input('interval-component', 'n_intervals')])
+def update_metrics(n):
+    return html.Div(children=[NAVBAR,BODY, html.Label("*Assumptions -->fule price = 1.20/L and Fule used per 100km = 7 L"),html.Label(" Data last updated @ " + str(datetime.datetime.now()))])
 
 if __name__ == '__main__':
-        app.run_server(host="0.0.0.0", port=8050,debug=True, dev_tools_hot_reload=False)
+        app.run_server(host="0.0.0.0", port=8050,debug=True)
 
 #docker build -t dash .
 #docker run -p 8050:8050 -v "$(pwd)"/app:/app --rm dash
 #docker login
-#docker tag
 #docker tag dash sarthaknautiyal/dash-azure:1.0.0
-#docker push
 #docker push sarthaknautiyal/dash-azure:1.0.0
