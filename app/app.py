@@ -23,9 +23,9 @@ credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCO
 
 
 # The ID and range of a sample spreadsheet.
-CHARGE_SPREADSHEET_ID = '1Lq519W-aIu9kERUwDgY1Z6W0xIjChPk7WSf58wM5ZWw'
-TRIP_SPREADSHEET_ID = '16BraPT4BMTZZu_8q7DxqlZYI1ITXjnb3MUR5GEB5Qo4'
-PARK_SPREADSHEET_ID = '1rvgmptBj0Yec7m6-E8t1V-Mdnv3HI2Fm0Y0qnuwjsnY'
+CHARGE_SPREADSHEET_ID = '<charge-id>'
+TRIP_SPREADSHEET_ID = '<trip-id>'
+PARK_SPREADSHEET_ID = '<park_id>'
 
 charge_df = utility.getChargeDF(credentials, CHARGE_SPREADSHEET_ID)
 trip_df = utility.getTripDF(credentials, TRIP_SPREADSHEET_ID, charge_df)
