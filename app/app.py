@@ -23,13 +23,15 @@ credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCO
 
 
 # The ID and range of a sample spreadsheet.
-CHARGE_SPREADSHEET_ID = '<charge-id>'
-TRIP_SPREADSHEET_ID = '<trip-id>'
-PARK_SPREADSHEET_ID = '<park_id>'
+CHARGE_SPREADSHEET_ID = '<id>'
+TRIP_SPREADSHEET_ID = '<id>'
+PARK_SPREADSHEET_ID = '<id>'
 
+#fetch trip , charge and park details and create df
 charge_df = utility.getChargeDF(credentials, CHARGE_SPREADSHEET_ID)
 trip_df = utility.getTripDF(credentials, TRIP_SPREADSHEET_ID, charge_df)
 park_df = utility.getParkDF(credentials, PARK_SPREADSHEET_ID)
+
 
 park_df = park_df[park_df["duration"] / (60 * 60) > 1]
 trip_df = trip_df[trip_df["distance_traveled"] >= 1]
@@ -541,10 +543,13 @@ app.layout = html.Div(
     ])
 )
 
+def serve_layout():
+    return html.Div(children=[NAVBAR,BODY, html.Label("*Assumptions -->fule price = 1.20/L and Fule used per 100km = 7 L"),html.Label(" Data last updated @ " + str(datetime.datetime.now()))])
+
 @app.callback(Output('live-update-text', 'children'),
               [Input('interval-component', 'n_intervals')])
 def update_metrics(n):
-    return html.Div(children=[NAVBAR,BODY, html.Label("*Assumptions -->fule price = 1.20/L and Fule used per 100km = 7 L"),html.Label(" Data last updated @ " + str(datetime.datetime.now()))])
+    return serve_layout()
 
 if __name__ == '__main__':
         app.run_server(host="0.0.0.0", port=8050,debug=True)
