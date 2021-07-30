@@ -1,18 +1,24 @@
 function getData() {
   Logger.log("Starting the fetch Process")
-  var master_id = '1ShoBS_CPHui4tgtHuYM9KOR3diegqoUuEOR9tUaghg-eg';
-  var trip_tracker_id = '16BraPT4BMTZZu_8q7DxqlZYIITXjgnb3MUR5GEB5Qo4';
-  var charge_tracker_id = '1Lq519W-aIu9kERUwDr1Z6W0xIjChPk7WSf58wM5ZWw';
-  var park_tracker_id = '1rvgmptBj0Yec7m6-E8V-Mdnv3HI2Fm0Y0qnuwjsnY';
+  var master_id = '1ShoBS_CPHui4tgtHuYM9KOR3diegqoUuEOR9tUag-eg';
+  var trip_tracker_id = '16BraPT4BMTZZu_8q7DxqlZYI1ITXjnb3MUR5GEB5Qo4';
+  var charge_tracker_id = '1Lq519W-aIu9kERUwDgY1Z6W0xIjChPk7WSf58wM5ZWw';
+  var park_tracker_id = '1rvgmptBj0Yec7m6-E8t1V-Mdnv3HI2Fm0Y0qnuwjsnY';
   
-  var today_mm_ss = Utilities.formatDate(new Date(), 'America/New_York', "dd-MM-yy hh:mm:ss a");
-  var today = Utilities.formatDate(new Date(), 'America/New_York', "yyMMdd");
-  var yest = Utilities.formatDate(new Date((new Date()).getTime()-1*(24*3600*1000)), 'America/New_York', "yyMMdd");  
+  var date = new Date()
+
+  var today_mm_ss = Utilities.formatDate(date, 'America/New_York', "dd-MM-yy hh:mm:ss a");
+  var today = Utilities.formatDate(date, 'America/New_York', "yyMMdd");
+  var yest = Utilities.formatDate(new Date((date).getTime()-1*(24*3600*1000)), 'America/New_York', "yyMMdd");
+
+
+  var currentMonth = today.slice(0, -2);
+  var prevMonth = yest.slice(0, -2);
   
   var base_url = 'https://owner-api.teslamotors.com/api/1/vehicles/'
   
-  var auth_token = "Bearer <token>"
-  
+  var auth_token = "Bearer qts-<token>"
+
   var response = UrlFetchApp.fetch(base_url, {
     'headers':{
       Authorization:auth_token
@@ -21,7 +27,7 @@ function getData() {
   });
   
   if (response.getResponseCode() == 401) {
-    MailApp.sendEmail('<email>', 'tesla api auth failed', 'tesla api auth failed');
+    MailApp.sendEmail('nautiyal.sarthak@gmail.com', 'tesla api auth failed', 'tesla api auth failed');
   }
   Logger.log("tesla api auth success")  
   var data = JSON.parse(response.getContentText());
@@ -63,12 +69,17 @@ function getData() {
     //Create new sheet for new Car Name if it doesn't already exist
     try {
       sheet.setActiveSheet(sheet.getSheetByName(name + "_" + today));
-    } catch (e) {  
+    } catch (e) { 
       Logger.log("Creating Today's Master Sheet")
       sheet.insertSheet(name + "_" + today);
+
+      var sheet_yest = sheet.getSheetByName(name + "_" + yest);
+      
+      Logger.log("Archiving Yest Master Sheet")
+      var ssNew = SpreadsheetApp.create(name + "_" + yest);
+      sheet_yest.copyTo(ssNew);
       
       Logger.log("Deleting Yest Master Sheet")
-      var sheet_yest = sheet.getSheetByName(name + "_" + yest);
       sheet.deleteSheet(sheet_yest);
     }
     
