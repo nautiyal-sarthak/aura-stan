@@ -1,6 +1,8 @@
 from __future__ import division
 from googleapiclient.discovery import build
 import pandas as pd
+import numpy as np
+
 
 
 #Constants
@@ -229,7 +231,7 @@ def getTripDF(credentials, SPREADSHEET_ID,charge_df_cal):
          "max_kwh", "real_dis", "cost_ev", "cost_ice", "money_saved"]]
 
 
-    return trip_df_cal
+    return trip_df_cal[~trip_df_cal.isin([np.nan,np.inf]).any(1)]
 
 def getParkDF(credentials, SPREADSHEET_ID):
     phantom_df = getDataFrame(credentials, SPREADSHEET_ID)
