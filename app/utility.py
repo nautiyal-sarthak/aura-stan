@@ -236,40 +236,16 @@ def getTripDF(credentials, SPREADSHEET_ID,charge_df_cal):
 def getParkDF(credentials, SPREADSHEET_ID):
     phantom_df = getDataFrame(credentials, SPREADSHEET_ID)
     phantom_df.set_index("park_id", inplace=True)
-    phantom_df = phantom_df[phantom_df["park_end_time"].notnull()]
 
-    # inforsing schema
-    phantom_df = phantom_df.astype(dtype={
-        "park_date": "int64",
-        "charge_session_id": "int64",
-        "park_start_time": "string",
-        "park_start_odometer": "float",
-        "park_start_longitude": "float",
-        "park_start_latitude": "float",
-        "park_start_ideal_battery_range": "float",
-        "park_start_energy_added": "float",
-        "park_start_battery_range": "float",
-        "park_start_miles_added_ideal": "float",
-        "park_start_miles_added_rated": "float",
-        "park_start_est_battery_range": "float",
-        "park_start_usable_battery_level": "int64",
-        "park_start_battery_level": "int64",
-        "park_start_temp": "float",
-        "park_sentry_mode": "string",
-        "park_end_odometer": "float",
-        "park_end_longitude": "float",
-        "park_end_latitude": "float",
-        "park_end_ideal_battery_range": "float",
-        "park_end_energy_added": "float",
-        "park_end_battery_range": "float",
-        "park_end_miles_added_ideal": "float",
-        "park_end_miles_added_rated": "float",
-        "park_end_est_battery_range": "float",
-        "park_end_usable_battery_level": "int64",
-        "park_end_battery_level": "int64",
-        "park_end_temp": "float",
-        "park_end_time": "string"
-    })
+
+    for col in phantom_df.columns :
+        if col not in ["park_start_time","park_sentry_mode","park_end_time"]:
+            phantom_df[col] = pd.to_numeric(phantom_df[col], errors="coerce")
+        else:
+            phantom_df[col] = phantom_df[col].astype(str)
+
+    phantom_df = phantom_df.dropna()
+
 
     # adding important cols
     phantom_df["park_start_time"] = pd.to_datetime(phantom_df['park_start_time'], unit='ms').dt.tz_localize(
