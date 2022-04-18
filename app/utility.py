@@ -11,7 +11,7 @@ max_range=423
 kwh_per_km = total_kwh/max_range
 super_charge_rate_per_kwh = 0.24
 level2_rate_per_hour = 1
-level1_rate_per_hour = 0.001125
+level1_rate_per_hour = 0.10
 
 fule_price_per_l = 1.20
 ice_fule_per_100km = 7
@@ -37,33 +37,46 @@ def getChargeDF(credentials,SPREADSHEET_ID):
 
 
     # # inforsing schema
+    # charge_df = charge_df.astype(dtype={
+    #     "session_date": "int64",
+    #     "session_start_time": "string",
+    #     "session_start_odometer": "float",
+    #     "session_start_longitude": "float",
+    #     "session_start_latitude": "float",
+    #     "session_start_ideal_battery_range": "float",
+    #     "session_start_energy_added": "float",
+    #     "session_start_battery_range": "float",
+    #     "session_start_miles_added_ideal": "float",
+    #     "session_start_miles_added_rated": "float",
+    #     "session_start_est_battery_range": "float",
+    #     "session_start_usable_battery_level": "int64",
+    #     "session_start_battery_level": "int64",
+    #     "session_end_odometer": "float",
+    #     "session_end_longitude": "float",
+    #     "session_end_latitude": "float",
+    #     "session_end_ideal_battery_range": "float",
+    #     "session_end_energy_added": "float",
+    #     "session_end_battery_range": "float",
+    #     "session_end_miles_added_ideal": "float",
+    #     "session_end_miles_added_rated": "float",
+    #     "session_end_est_battery_range": "float",
+    #     "session_end_usable_battery_level": "int64",
+    #     "session_end_battery_level": "int64",
+    #     "session_end_time": "string",
+    #     "charge_voltage": "string",
+    #     "is_free": "string"
+    # })
+
     charge_df = charge_df.astype(dtype={
-        "session_date": "int64",
         "session_start_time": "string",
-        "session_start_odometer": "float",
-        "session_start_longitude": "float",
-        "session_start_latitude": "float",
-        "session_start_ideal_battery_range": "float",
-        "session_start_energy_added": "float",
-        "session_start_battery_range": "float",
-        "session_start_miles_added_ideal": "float",
-        "session_start_miles_added_rated": "float",
-        "session_start_est_battery_range": "float",
-        "session_start_usable_battery_level": "int64",
-        "session_start_battery_level": "int64",
-        "session_end_odometer": "float",
-        "session_end_longitude": "float",
-        "session_end_latitude": "float",
-        "session_end_ideal_battery_range": "float",
-        "session_end_energy_added": "float",
-        "session_end_battery_range": "float",
-        "session_end_miles_added_ideal": "float",
-        "session_end_miles_added_rated": "float",
-        "session_end_est_battery_range": "float",
-        "session_end_usable_battery_level": "int64",
-        "session_end_battery_level": "int64",
-        "session_end_time": "string",
         "charge_voltage": "string",
+        "session_start_energy_added": "float",
+        "session_start_miles_added_ideal": "float",
+        "session_start_odometer": "float",
+        "session_end_time": "string",
+        "session_end_energy_added": "float",
+        "session_end_miles_added_ideal": "float",
+        "session_end_odometer": "float",
         "is_free": "string"
     })
 
@@ -87,7 +100,6 @@ def getChargeDF(credentials,SPREADSHEET_ID):
 
         return chr_typ
 
-    charge_df["charge_level"] = charge_df.apply(charge_lvl, axis=1)
 
     # 1. Charge durtion
     charge_df["charge_duration"] = (charge_df["session_end_time"] - charge_df["session_start_time"]).dt.total_seconds()
@@ -100,6 +112,8 @@ def getChargeDF(credentials,SPREADSHEET_ID):
     # 3. Km added
     charge_df["km_added"] = (charge_df["session_end_miles_added_ideal"] - charge_df[
         "session_start_miles_added_ideal"]) * 1.60934
+
+    charge_df["charge_level"] = charge_df.apply(charge_lvl, axis=1)
 
     # 4. Cost
     def calCost(row):
@@ -129,8 +143,7 @@ def getChargeDF(credentials,SPREADSHEET_ID):
     charge_df["cost/km"] = charge_df['cost'] / charge_df["Actual_Distance_km"]
 
     charge_df_cal = charge_df[
-        ["session_date", "session_start_date", "session_start_time", "session_end_time", "charge_duration",
-         "session_start_battery_level", "session_end_battery_level", "kwh_added", "km_added", "cost",
+        ["session_start_date", "session_start_time", "session_end_time", "charge_duration", "kwh_added", "km_added", "cost",
          "Actual_Distance_km", "cost/km", "charge_level"]]
 
     return charge_df_cal
@@ -141,34 +154,47 @@ def getTripDF(credentials, SPREADSHEET_ID,charge_df_cal):
     trip_df = trip_df[trip_df["trip_end_time"].notnull()]
 
     # inforsing schema
-    trip_df = trip_df.astype(dtype={"trip_date": "int64",
-                                    "charge_session_id": "int64",
-                                    "trip_start_time": "string",
-                                    "trip_start_odometer": "float",
-                                    "trip_start_longitude": "float",
-                                    "trip_start_latitude": "float",
-                                    "trip_start_ideal_battery_range": "float",
-                                    "trip_start_energy_added": "float",
-                                    "trip_start_battery_range": "float",
-                                    "trip_start_miles_added_ideal": "float",
-                                    "trip_start_miles_added_rated": "float",
-                                    "trip_start_est_battery_range": "float",
-                                    "trip_start_usable_battery_level": "int64",
-                                    "trip_start_battery_level": "int64",
-                                    "trip_start_temp": "float",
-                                    "trip_end_odometer": "float",
-                                    "trip_end_longitude": "float",
-                                    "trip_end_latitude": "float",
-                                    "trip_end_ideal_battery_range": "float",
-                                    "trip_end_energy_added": "float",
-                                    "trip_end_battery_range": "float",
-                                    "trip_end_miles_added_ideal": "float",
-                                    "trip_end_miles_added_rated": "float",
-                                    "trip_end_est_battery_range": "float",
-                                    "trip_end_usable_battery_level": "int64",
-                                    "trip_end_battery_level": "int64",
-                                    "trip_end_temp": "float",
-                                    "trip_end_time": "string"})
+    # trip_df = trip_df.astype(dtype={"trip_date": "int64",
+    #                                 "charge_session_id": "int64",
+    #                                 "trip_start_time": "string",
+    #                                 "trip_start_odometer": "float",
+    #                                 "trip_start_longitude": "float",
+    #                                 "trip_start_latitude": "float",
+    #                                 "trip_start_ideal_battery_range": "float",
+    #                                 "trip_start_energy_added": "float",
+    #                                 "trip_start_battery_range": "float",
+    #                                 "trip_start_miles_added_ideal": "float",
+    #                                 "trip_start_miles_added_rated": "float",
+    #                                 "trip_start_est_battery_range": "float",
+    #                                 "trip_start_usable_battery_level": "int64",
+    #                                 "trip_start_battery_level": "int64",
+    #                                 "trip_start_temp": "float",
+    #                                 "trip_end_odometer": "float",
+    #                                 "trip_end_longitude": "float",
+    #                                 "trip_end_latitude": "float",
+    #                                 "trip_end_ideal_battery_range": "float",
+    #                                 "trip_end_energy_added": "float",
+    #                                 "trip_end_battery_range": "float",
+    #                                 "trip_end_miles_added_ideal": "float",
+    #                                 "trip_end_miles_added_rated": "float",
+    #                                 "trip_end_est_battery_range": "float",
+    #                                 "trip_end_usable_battery_level": "int64",
+    #                                 "trip_end_battery_level": "int64",
+    #                                 "trip_end_temp": "float",
+    #                                 "trip_end_time": "string"})
+
+    trip_df = trip_df.astype(dtype={
+        "trip_start_time": "string",
+        "trip_start_odometer": "float",
+        "trip_start_ideal_battery_range": "float",
+        "trip_start_battery_level": "int64",
+        "trip_start_temp": "float",
+        "charge_session_id": "int64",
+        "trip_end_time": "string",
+        "trip_end_odometer": "float",
+        "trip_end_ideal_battery_range": "float",
+        "trip_end_battery_level": "int64",
+        "trip_end_temp":"float"})
 
     # TRIP
     # creating impotant cols
@@ -277,7 +303,7 @@ def getParkDF(credentials, SPREADSHEET_ID):
     phantom_df["wh_loss_rate_per_hr"] = (phantom_df["Estimated_kwh_lost"] * 1000) / (phantom_df["duration"] / (60 * 60))
 
     phantom_df_cal = phantom_df[
-        ["park_date", "park_start_date", "charge_session_id", "park_sentry_mode", "park_start_time", "park_end_time",
+        ["park_start_date", "park_sentry_mode", "park_start_time", "park_end_time",
          "duration", "avg_temp", "battery_%_lost", "Estimated_kwh_lost", "wh_loss_rate_per_hr"]]
 
     return phantom_df_cal
